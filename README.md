@@ -39,3 +39,4 @@ You can find the settings you need to change by searching !CHANGETHIS and follow
 ### 5. Commit message
 
 This template uses the conventional commit specification for better readability and clarity. It is mandatory to use conventional commit messages. Read more about conventional commits [here](https://www.conventionalcommits.org/en/v1.0.0/).
+# ITTOKS-FE
