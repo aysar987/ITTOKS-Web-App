@@ -1,0 +1,13 @@
+.env
+*.env
+*.json
+
+firebase-key.json
+*-firebase-adminsdk-*.json
+
+bin/
+tmp/
+
+.DS_Store
+.vscode/
+.idea/
