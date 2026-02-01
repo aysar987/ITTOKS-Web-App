@@ -9,7 +9,9 @@ import (
 	"google.golang.org/api/option"
 )
 
-func InitFirebase() (*firebase.App, error) {
+var FirebaseApp *firebase.App
+
+func InitFirebase() error {
 	privateKey := strings.ReplaceAll(
 		os.Getenv("FIREBASE_PRIVATE_KEY"),
 		"\\n",
@@ -23,5 +25,11 @@ func InitFirebase() (*firebase.App, error) {
 		"client_email": "` + os.Getenv("FIREBASE_CLIENT_EMAIL") + `"
 	}`))
 
-	return firebase.NewApp(context.Background(), nil, opt)
+	app, err := firebase.NewApp(context.Background(), nil, opt)
+	if err != nil {
+		return err
+	}
+
+	FirebaseApp = app
+	return nil
 }
