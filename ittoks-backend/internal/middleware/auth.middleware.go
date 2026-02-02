@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,13 @@ import (
 
 func FirebaseAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if os.Getenv("ENV") == "dev" {
+			c.Set("uid", "dev-user")
+			c.Set("email", "dev@local.test")
+			c.Next()
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{

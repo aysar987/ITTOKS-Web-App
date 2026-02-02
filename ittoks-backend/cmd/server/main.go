@@ -42,14 +42,30 @@ func main() {
 	})
 
 	api := r.Group("/api")
+	api.Use(middleware.FirebaseAuth())
+	siswaRepo := repository.NewSiswaRepository(db)
+	siswaService := service.NewSiswaService(siswaRepo)
+	siswaHandler := handler.NewSiswaHandler(siswaService)
+
+	siswa := api.Group("/students")
+	siswa.POST("", siswaHandler.Create)
+	siswa.GET("", siswaHandler.List)
+	siswa.DELETE("/:id", siswaHandler.Delete)
+
+	nilaiRepo := repository.NewNilaiRepository(db)
+	nilaiService := service.NewNilaiService(nilaiRepo)
+	nilaiHandler := handler.NewNilaiHandler(nilaiService)
+
+	nilai := api.Group("/nilai")
+	nilai.POST("", nilaiHandler.Create)
+	nilai.GET("/siswa/:siswa_id", nilaiHandler.GetBySiswa)
+
 	dashboardRepo := repository.NewDashboardRepository(db)
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	dashboard := api.Group("/dashboard")
 	dashboard.GET("/summary", dashboardHandler.GetSummary)
-
-	api.Use(middleware.FirebaseAuth())
 
 	api.GET("/me", func(c *gin.Context) {
 		c.JSON(200, gin.H{
