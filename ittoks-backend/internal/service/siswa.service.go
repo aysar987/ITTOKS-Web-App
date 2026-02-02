@@ -16,3 +16,7 @@ func NewSiswaService(r repository.SiswaRepository) *SiswaService {
 func (s *SiswaService) CreateSiswa(siswa domain.Siswa) error {
 	return s.repo.Create(siswa)
 }
+
+func (s *SiswaService) GetAll() ([]domain.Siswa, error) {
+	return s.repo.FindAll()
+}

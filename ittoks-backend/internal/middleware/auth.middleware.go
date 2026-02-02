@@ -4,28 +4,42 @@ import (
 	"net/http"
 	"strings"
 
-	"firebase.google.com/go/auth"
 	"github.com/gin-gonic/gin"
+
+	"ittoks-backend/internal/config"
 )
 
-func AuthMiddleware(authClient *auth.Client) gin.HandlerFunc {
+func FirebaseAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
-		if token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "missing authorization header",
+			})
 			return
 		}
 
-		idToken := strings.Replace(token, "Bearer ", "", 1)
+		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
 
-		decoded, err := authClient.VerifyIDToken(c, idToken)
+		client, err := config.FirebaseApp.Auth(c)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": "firebase auth init failed",
+			})
 			return
 		}
 
-		c.Set("uid", decoded.UID)
-		c.Set("role", decoded.Claims["role"])
+		token, err := client.VerifyIDToken(c, tokenString)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "invalid token",
+			})
+			return
+		}
+
+		c.Set("uid", token.UID)
+		c.Set("email", token.Claims["email"])
+
 		c.Next()
 	}
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"strings"
 
@@ -11,6 +12,13 @@ import (
 
 var FirebaseApp *firebase.App
 
+type firebaseCred struct {
+	Type        string `json:"type"`
+	ProjectID   string `json:"project_id"`
+	PrivateKey  string `json:"private_key"`
+	ClientEmail string `json:"client_email"`
+}
+
 func InitFirebase() error {
 	privateKey := strings.ReplaceAll(
 		os.Getenv("FIREBASE_PRIVATE_KEY"),
@@ -18,12 +26,19 @@ func InitFirebase() error {
 		"\n",
 	)
 
-	opt := option.WithCredentialsJSON([]byte(`{
-		"type": "service_account",
-		"project_id": "` + os.Getenv("FIREBASE_PROJECT_ID") + `",
-		"private_key": "` + privateKey + `",
-		"client_email": "` + os.Getenv("FIREBASE_CLIENT_EMAIL") + `"
-	}`))
+	cred := firebaseCred{
+		Type:        "service_account",
+		ProjectID:   os.Getenv("FIREBASE_PROJECT_ID"),
+		PrivateKey:  privateKey,
+		ClientEmail: os.Getenv("FIREBASE_CLIENT_EMAIL"),
+	}
+
+	b, err := json.Marshal(cred)
+	if err != nil {
+		return err
+	}
+
+	opt := option.WithCredentialsJSON(b)
 
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
