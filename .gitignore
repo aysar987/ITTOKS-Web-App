@@ -1,13 +1,31 @@
+# --- Backend (Go) Settings ---
 .env
 *.env
 *.json
-
+# Sangat penting untuk menjaga keamanan Firebase Key
 firebase-key.json
 *-firebase-adminsdk-*.json
-
 bin/
 tmp/
 
+# --- Frontend (Next.js/React) Settings ---
+pnpm-error.lock
+node_modules/
+.pnp
+.pnp.js
+/coverage
+/.next/
+/out/
+/build
+*.pem
+npm-debug.log*
+.pnpm-debug.log*
+.env*.local
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# --- General ---
 .DS_Store
 .vscode/
 .idea/
