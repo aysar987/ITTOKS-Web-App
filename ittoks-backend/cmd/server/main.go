@@ -43,14 +43,34 @@ func main() {
 
 	api := r.Group("/api")
 	api.Use(middleware.FirebaseAuth())
-	siswaRepo := repository.NewSiswaRepository(db)
+	siswaRepo := repository.NewSiswaFirestoreRepo(db)
 	siswaService := service.NewSiswaService(siswaRepo)
 	siswaHandler := handler.NewSiswaHandler(siswaService)
 
 	siswa := api.Group("/students")
 	siswa.POST("", siswaHandler.Create)
 	siswa.GET("", siswaHandler.List)
-	siswa.DELETE("/:id", siswaHandler.Delete)
+	siswa.PUT("/:studentId", siswaHandler.Update)
+	siswa.DELETE("/:studentId", siswaHandler.Delete)
+
+	assessmentRepo := repository.NewAssessmentRepo(db)
+	assessmentService := service.NewAssessmentService(assessmentRepo)
+	assessmentHandler := handler.NewAssessmentHandler(assessmentService)
+
+	assessments := api.Group("/students/:studentId/assessments")
+	assessments.POST("", assessmentHandler.Create)
+	assessments.GET("", assessmentHandler.ListByStudent)
+	assessments.PUT("/:assessmentId", assessmentHandler.Update)
+	assessments.DELETE("/:assessmentId", assessmentHandler.Delete)
+
+	absensiRepo := repository.NewAbsensiRepository(db)
+	absensiService := service.NewAbsensiService(absensiRepo)
+	absensiHandler := handler.NewAbsensiHandler(absensiService)
+
+	absensi := api.Group("/absensi")
+	absensi.POST("", absensiHandler.Create)
+	absensi.GET("", absensiHandler.List)
+	absensi.PUT("/:id", absensiHandler.Update)
 
 	nilaiRepo := repository.NewNilaiRepository(db)
 	nilaiService := service.NewNilaiService(nilaiRepo)

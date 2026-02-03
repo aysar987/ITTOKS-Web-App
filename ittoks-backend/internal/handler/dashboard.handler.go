@@ -3,23 +3,31 @@ package handler
 import (
 	"net/http"
 
-	"ittoks-backend/internal/service"
+	"context"
+
+	"ittoks-backend/internal/domain"
 
 	"github.com/gin-gonic/gin"
 )
 
-type DashboardHandler struct {
-	service *service.DashboardService
+type DashboardService interface {
+	GetSummary(ctx context.Context) (*domain.DashboardSummary, error)
 }
 
-func NewDashboardHandler(service *service.DashboardService) *DashboardHandler {
-	return &DashboardHandler{service: service}
+type DashboardHandler struct {
+	service DashboardService
+}
+
+func NewDashboardHandler(s DashboardService) *DashboardHandler {
+	return &DashboardHandler{service: s}
 }
 
 func (h *DashboardHandler) GetSummary(c *gin.Context) {
-	data, err := h.service.GetSummary(c.Request.Context())
+	data, err := h.service.GetSummary(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
 		return
 	}
 

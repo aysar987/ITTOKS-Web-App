@@ -56,3 +56,26 @@ func (h *SiswaHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "siswa deleted"})
 }
+
+func (h *SiswaHandler) Update(c *gin.Context) {
+	id := c.Param("id")
+
+	var payload map[string]interface{}
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	if err := h.service.Update(c, id, payload); err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "student updated",
+	})
+}

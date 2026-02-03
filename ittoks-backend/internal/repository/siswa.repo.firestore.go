@@ -14,30 +14,22 @@ type SiswaFirestoreRepo struct {
 }
 
 func NewSiswaFirestoreRepo(db *firestore.Client) *SiswaFirestoreRepo {
-	return &SiswaFirestoreRepo{db}
+	return &SiswaFirestoreRepo{db: db}
 }
 
-func (r *SiswaFirestoreRepo) Create(s domain.Siswa) error {
-	_, err := r.db.Collection("students").Doc(s.ID).Set(context.Background(), s)
+/* ================= CREATE ================= */
+
+func (r *SiswaFirestoreRepo) Create(
+	ctx context.Context,
+	s *domain.Siswa,
+) error {
+	_, _, err := r.db.Collection("students").Add(ctx, s)
 	return err
 }
 
-func (r *SiswaFirestoreRepo) FindAll() ([]domain.Siswa, error) {
-	docs, err := r.db.Collection("students").Documents(context.Background()).GetAll()
-	if err != nil {
-		return nil, err
-	}
+/* ================= LIST ================= */
 
-	var result []domain.Siswa
-	for _, d := range docs {
-		var s domain.Siswa
-		d.DataTo(&s)
-		result = append(result, s)
-	}
-	return result, nil
-}
-
-func (r *SiswaRepository) List(
+func (r *SiswaFirestoreRepo) List(
 	ctx context.Context,
 	kelasID, tahunAjar, semester string,
 ) ([]domain.Siswa, error) {
@@ -68,10 +60,36 @@ func (r *SiswaRepository) List(
 		}
 
 		var s domain.Siswa
-		doc.DataTo(&s)
+		if err := doc.DataTo(&s); err != nil {
+			return nil, err
+		}
 		s.ID = doc.Ref.ID
 		result = append(result, s)
 	}
 
 	return result, nil
+}
+
+/* ================= DELETE ================= */
+
+func (r *SiswaFirestoreRepo) Delete(
+	ctx context.Context,
+	id string,
+) error {
+	_, err := r.db.Collection("students").Doc(id).Delete(ctx)
+	return err
+}
+
+func (r *SiswaFirestoreRepo) Update(
+	ctx context.Context,
+	id string,
+	input map[string]interface{},
+) error {
+
+	_, err := r.db.
+		Collection("students").
+		Doc(id).
+		Set(ctx, input, firestore.MergeAll)
+
+	return err
 }
