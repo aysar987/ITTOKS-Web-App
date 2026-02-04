@@ -12,6 +12,7 @@ import (
 
 type DashboardService interface {
 	GetSummary(ctx context.Context) (*domain.DashboardSummary, error)
+	GetCharts(ctx context.Context) (*domain.DashboardCharts, error)
 }
 
 type DashboardHandler struct {
@@ -32,4 +33,13 @@ func (h *DashboardHandler) GetSummary(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, data)
+}
+
+func (h *DashboardHandler) GetCharts(c *gin.Context) {
+	data, err := h.service.GetCharts(c)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, data)
 }

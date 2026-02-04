@@ -22,3 +22,24 @@ type StudentRanking struct {
 	KelasID      string  `json:"kelas_id"`
 	AverageScore float64 `json:"average_score"`
 }
+type ChartData struct {
+	Label string  `json:"label"`
+	Value float64 `json:"value"`
+}
+
+type AvgScorePerClass struct {
+	KelasID      string  `json:"kelas_id"`
+	AverageScore float64 `json:"average_score"`
+}
+
+type AttendanceSummary struct {
+	H int `json:"H"`
+	I int `json:"I"`
+	S int `json:"S"`
+	A int `json:"A"`
+}
+
+type DashboardCharts struct {
+	AvgScorePerClass  []AvgScorePerClass `json:"avg_score_per_class"`
+	AttendanceSummary AttendanceSummary  `json:"attendance_summary"`
+}

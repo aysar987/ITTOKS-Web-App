@@ -53,3 +53,32 @@ func (r *AbsensiRepository) Update(ctx context.Context, id, status string) error
 	})
 	return err
 }
+
+func (r *AbsensiRepository) CountBySiswa(
+	ctx context.Context,
+	siswaID string,
+) (hadir, izin, alpha int, err error) {
+
+	docs, err := r.db.Collection("absensi").
+		Where("siswa_id", "==", siswaID).
+		Documents(ctx).
+		GetAll()
+	if err != nil {
+		return
+	}
+
+	for _, d := range docs {
+		if status, ok := d.Data()["status"].(string); ok {
+			switch status {
+			case "H":
+				hadir++
+			case "I":
+				izin++
+			case "A":
+				alpha++
+			}
+		}
+	}
+
+	return
+}

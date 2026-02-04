@@ -80,12 +80,23 @@ func main() {
 	nilai.POST("", nilaiHandler.Create)
 	nilai.GET("/siswa/:siswa_id", nilaiHandler.GetBySiswa)
 
+	laporanRepo := repository.NewLaporanRepository(db)
+	laporanService := service.NewLaporanService(laporanRepo, absensiRepo)
+
+	laporanHandler := handler.NewLaporanHandler(laporanService)
+	laporanExportHandler := handler.NewLaporanExportHandler(laporanService)
+
+	laporan := api.Group("/laporan")
+	laporan.GET("", laporanHandler.GetRekap)
+	laporan.GET("/export", laporanExportHandler.ExportExcel)
+
 	dashboardRepo := repository.NewDashboardRepository(db)
 	dashboardService := service.NewDashboardService(dashboardRepo)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	dashboard := api.Group("/dashboard")
 	dashboard.GET("/summary", dashboardHandler.GetSummary)
+	dashboard.GET("/charts", dashboardHandler.GetCharts)
 
 	api.GET("/me", func(c *gin.Context) {
 		c.JSON(200, gin.H{

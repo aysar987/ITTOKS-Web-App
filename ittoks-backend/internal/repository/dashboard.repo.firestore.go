@@ -20,14 +20,12 @@ func NewDashboardRepository(db *firestore.Client) *DashboardRepository {
 
 func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.DashboardSummary, error) {
 
-	// ===== total students =====
 	studentDocs, err := r.db.Collection("students").Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
 	}
 	totalStudents := len(studentDocs)
 
-	// ===== total classes (unique kelas_id) =====
 	classSet := make(map[string]bool)
 	for _, d := range studentDocs {
 		if kelas, ok := d.Data()["kelas_id"].(string); ok {
@@ -36,7 +34,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 	}
 	totalClasses := len(classSet)
 
-	// ===== average score (PAKAI FIELD "nilai") =====
 	nilaiDocs, err := r.db.Collection("nilai").Documents(ctx).GetAll()
 	if err != nil {
 		return nil, err
@@ -57,9 +54,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		averageScore = totalScore / float64(count)
 	}
 
-	// ===== class contribution =====
-
-	// map siswa_id -> kelas_id
 	studentClass := make(map[string]string)
 	for _, d := range studentDocs {
 		if kelas, ok := d.Data()["kelas_id"].(string); ok {
@@ -67,7 +61,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		}
 	}
 
-	// kumpulkan nilai per kelas
 	kelasScores := make(map[string][]float64)
 
 	for _, d := range nilaiDocs {
@@ -96,9 +89,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		})
 	}
 
-	// ===== ranking siswa =====
-
-	// map siswa_id -> nama + kelas
 	studentInfo := make(map[string]struct {
 		Nama    string
 		KelasID string
@@ -118,7 +108,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		}
 	}
 
-	// nilai per siswa
 	studentScores := make(map[string][]float64)
 
 	for _, d := range nilaiDocs {
@@ -132,7 +121,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		studentScores[siswaID] = append(studentScores[siswaID], score)
 	}
 
-	// hitung ranking
 	var ranking []domain.StudentRanking
 
 	for siswaID, scores := range studentScores {
@@ -151,7 +139,6 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		})
 	}
 
-	// sort DESC
 	sort.Slice(ranking, func(i, j int) bool {
 		return ranking[i].AverageScore > ranking[j].AverageScore
 	})
@@ -165,4 +152,99 @@ func (r *DashboardRepository) GetSummary(ctx context.Context) (*domain.Dashboard
 		LastUpdated:       time.Now(),
 	}, nil
 
+}
+
+func (r *DashboardRepository) GetCharts(
+	ctx context.Context,
+) (*domain.DashboardCharts, error) {
+
+	// =============================
+	// AVG SCORE PER CLASS (FIXED)
+	// =============================
+
+	// 1. ambil students → map siswa_id ke kelas_id
+	studentDocs, err := r.db.Collection("students").Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	studentClass := make(map[string]string)
+	for _, d := range studentDocs {
+		if kelas, ok := d.Data()["kelas_id"].(string); ok {
+			studentClass[d.Ref.ID] = kelas
+		}
+	}
+
+	// 2. ambil nilai
+	nilaiDocs, err := r.db.Collection("nilai").Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	type acc struct {
+		sum   float64
+		count int
+	}
+
+	classMap := map[string]*acc{}
+
+	for _, d := range nilaiDocs {
+		data := d.Data()
+
+		siswaID, ok1 := data["siswa_id"].(string)
+		nilai, ok2 := data["nilai"].(float64)
+		kelas, ok3 := studentClass[siswaID]
+
+		if !ok1 || !ok2 || !ok3 {
+			continue
+		}
+
+		if _, ok := classMap[kelas]; !ok {
+			classMap[kelas] = &acc{}
+		}
+
+		classMap[kelas].sum += nilai
+		classMap[kelas].count++
+	}
+
+	var avgPerClass []domain.AvgScorePerClass
+	for kelas, v := range classMap {
+		if v.count == 0 {
+			continue
+		}
+		avgPerClass = append(avgPerClass, domain.AvgScorePerClass{
+			KelasID:      kelas,
+			AverageScore: v.sum / float64(v.count),
+		})
+	}
+
+	// =============================
+	// ATTENDANCE SUMMARY
+	// =============================
+	absenDocs, err := r.db.Collection("absensi").Documents(ctx).GetAll()
+	if err != nil {
+		return nil, err
+	}
+
+	attendance := domain.AttendanceSummary{}
+
+	for _, d := range absenDocs {
+		if status, ok := d.Data()["status"].(string); ok {
+			switch status {
+			case "H":
+				attendance.H++
+			case "I":
+				attendance.I++
+			case "S":
+				attendance.S++
+			case "A":
+				attendance.A++
+			}
+		}
+	}
+
+	return &domain.DashboardCharts{
+		AvgScorePerClass:  avgPerClass,
+		AttendanceSummary: attendance,
+	}, nil
 }
