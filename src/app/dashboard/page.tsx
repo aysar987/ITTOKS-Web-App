@@ -3,6 +3,16 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { removeToken, getToken } from "@/lib/cookies";
+import { useEffect, useState } from "react";
+
+type DashboardSummary = {
+  total_students: number;
+  total_classes: number;
+  average_score: number;
+  last_updated: string;
+};
+
+const [summary, setSummary] = useState<DashboardSummary | null>(null);
 
 export default function DashboardPage() {
   const router = useRouter();
